@@ -10,6 +10,13 @@ enum ProgressBarText {
 
 /// A simple progress bar.
 ///
+/// ```
+/// # egui::__run_test_ui(|ui| {
+/// # let progress = 0.25;
+/// ui.add(egui::ProgressBar::new(progress).show_percentage());
+/// # });
+/// ```
+///
 /// See also: [`crate::Spinner`].
 #[must_use = "You should put this widget in a ui with `ui.add(widget);`"]
 pub struct ProgressBar {

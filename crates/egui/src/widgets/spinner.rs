@@ -4,6 +4,16 @@ use crate::{Response, Role, Sense, Ui, Widget, WidgetInfo};
 
 /// A spinner widget used to indicate loading.
 ///
+/// Usually you'd use [`Ui::spinner`] instead.
+///
+/// ```
+/// # egui::__run_test_ui(|ui| {
+/// // These are equivalent:
+/// ui.spinner();
+/// ui.add(egui::Spinner::new());
+/// # });
+/// ```
+///
 /// See also: [`crate::ProgressBar`].
 #[must_use = "You should put this widget in a ui with `ui.add(widget);`"]
 #[derive(Default)]

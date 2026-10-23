@@ -13,6 +13,25 @@ use crate::{
 /// the most recently shown one.
 /// If multiple modals are newly shown in the same frame, the order of the modals is undefined
 /// (either first or second could be top).
+///
+/// ```
+/// # egui::__run_test_ui(|ui| {
+/// # let mut modal_open = true;
+/// // `modal_open` should be stored in your app state.
+/// if modal_open {
+///     let modal = egui::Modal::new(egui::Id::unique("my_modal")).show(ui.ctx(), |ui| {
+///         ui.label("Are you sure?");
+///         if ui.button("Close").clicked() {
+///             ui.close();
+///         }
+///     });
+///     // Also true on Escape or a click outside the modal.
+///     if modal.should_close() {
+///         modal_open = false;
+///     }
+/// }
+/// # });
+/// ```
 pub struct Modal {
     pub area: Area,
     pub backdrop_color: Color32,
