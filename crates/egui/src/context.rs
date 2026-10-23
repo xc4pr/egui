@@ -4946,13 +4946,6 @@ fn warn_if_rect_changes_id(
     }
 }
 
-/// Resolve chains of `labelled_by`, so that `a → b → label` becomes `a → label`.
-///
-/// Screen readers follow `labelled_by` a single step. The number field of a text-less
-/// [`crate::Slider`] is labelled by the slider, which in turn may be labelled by
-/// [`crate::Response::labelled_by`]. Without this, the number field would have no name.
-///
-/// `nodes` are the `(id, node)` pairs of an [`accesskit::TreeUpdate`].
 /// Invisible widgets (see [`Ui::is_visible`]) are not exposed to accessibility.
 ///
 /// Nodes that aren't widgets themselves (e.g. text runs) inherit the visibility
@@ -4969,6 +4962,16 @@ fn is_accesskit_visible(widgets: &crate::WidgetRects, parent_map: &IdMap<Id>, mu
     }
 }
 
+/// Resolve chains of `labelled_by`, so that `a → b → label` becomes `a → label`.
+///
+/// Screen readers follow `labelled_by` a single step. The number field of a text-less
+/// [`crate::Slider`] is labelled by the slider, which in turn may be labelled by
+/// [`crate::Response::labelled_by`]. Without this, the number field would have no name.
+///
+/// Targets that are not in the tree (e.g. an [`Id`] that isn't a widget, or an invisible
+/// widget) are dropped, since `AccessKit` panics on them.
+///
+/// `nodes` are the `(id, node)` pairs of an [`accesskit::TreeUpdate`].
 fn flatten_labelled_by(nodes: &mut [(accesskit::NodeId, accesskit::Node)]) {
     profiling::function_scope!();
 
@@ -4987,11 +4990,11 @@ fn flatten_labelled_by(nodes: &mut [(accesskit::NodeId, accesskit::Node)]) {
     let mut flattened: Vec<(usize, Vec<accesskit::NodeId>)> = Vec::new();
 
     for (i, (id, node)) in nodes.iter().enumerate() {
-        let has_chain = node
+        let needs_resolving = node
             .labelled_by()
             .iter()
-            .any(|target| get(target).is_some_and(is_link));
-        if !has_chain {
+            .any(|target| get(target).is_none_or(is_link));
+        if !needs_resolving {
             continue;
         }
 
@@ -5007,7 +5010,12 @@ fn flatten_labelled_by(nodes: &mut [(accesskit::NodeId, accesskit::Node)]) {
                 Some(link) if is_link(link) => {
                     stack.extend(link.labelled_by().iter().rev().copied());
                 }
-                _ => resolved.push(target),
+                Some(_) => resolved.push(target),
+                None => {
+                    log::debug!(
+                        "labelled_by target {target:?} is not a visible widget; ignoring it"
+                    );
+                }
             }
         }
         flattened.push((i, resolved));

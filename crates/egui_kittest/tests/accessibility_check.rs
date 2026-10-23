@@ -214,3 +214,29 @@ fn hinted_text_field_keeps_its_placeholder_name() {
     );
     assert_eq!(field.placeholder(), Some("Search"));
 }
+
+/// `labelled_by` an `Id` that is not in the tree is ignored instead of panicking `AccessKit`.
+///
+/// See <https://github.com/emilk/egui/issues/3647>.
+#[test]
+fn labelled_by_unknown_id_is_ignored() {
+    let mut text = String::new();
+    let harness = Harness::builder()
+        .with_accessibility_check(false)
+        .build_ui(|ui| {
+            let label = ui.label("Name:");
+            let _ = ui
+                .text_edit_singleline(&mut text)
+                .labelled_by(egui::Id::unique("not a widget"))
+                .labelled_by(label.id);
+
+            // Invisible widgets are not in the tree either.
+            let hidden = ui.add_visible(false, egui::Label::new("Hidden"));
+            let _ = ui.text_edit_singleline(&mut text).labelled_by(hidden.id);
+        });
+
+    assert_eq!(
+        names_of(&harness, Role::TextInput),
+        vec![Some("Name:".to_owned()), None]
+    );
+}
